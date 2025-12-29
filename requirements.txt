@@ -1,0 +1,19 @@
+# Core Dependencies
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# Data Analysis & Technical Indicators
+pandas>=2.0.0
+numpy>=1.24.0
+ta>=0.11.0
+
+# Optional: Enhanced Logging and Monitoring
+colorlog==6.8.0
+
+# Optional: Testing
+pytest==7.4.3
+pytest-mock==3.12.0
+
+# Optional: Code Quality
+black==23.12.1
+flake8==6.1.0
