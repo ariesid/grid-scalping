@@ -446,7 +446,7 @@ class OrderManager:
                         result['total_failed'] += 1
             
             # Summary
-            logger.info("\n" + "=" * 60)
+            logger.info("=" * 60)
             logger.info("ORDER PLACEMENT SUMMARY")
             logger.info("=" * 60)
             logger.info(f"✓ Total placed: {result['total_placed']}")

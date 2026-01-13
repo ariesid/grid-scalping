@@ -589,7 +589,7 @@ class GridScalpingBot:
                 self.iteration_count += 1
                 iteration_start = time.time()
                 
-                logger.info(f"\n{'='*70}")
+                logger.info(f"{'='*70}")
                 logger.info(f"ITERATION {self.iteration_count} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
                 logger.info(f"{'='*70}\n")
                 

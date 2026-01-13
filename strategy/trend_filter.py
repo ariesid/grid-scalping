@@ -400,7 +400,7 @@ def can_activate_grid(
         # Decision
         can_activate = len(conditions_failed) == 0
         
-        logger.info("\n" + "=" * 60)
+        logger.info("=" * 60)
         if can_activate:
             logger.info("DECISION: ✓ ACTIVATE GRID TRADING")
             logger.info("Market conditions are favorable for grid strategy")
