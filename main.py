@@ -92,7 +92,8 @@ class GridScalpingBot:
         pair: str = 'SOL_USDT',
         initial_capital: float = 10000.0,
         loop_interval: int = 20,
-        max_drawdown: float = 0.05
+        max_drawdown: float = 0.01,
+        trailing_stop_pct: float = 0.015
     ):
         """
         Initialize the grid scalping bot.
@@ -102,7 +103,8 @@ class GridScalpingBot:
             pair: Trading pair (default: 'SOL_USDT')
             initial_capital: Starting capital (default: 10000.0)
             loop_interval: Loop interval in seconds (default: 20)
-            max_drawdown: Maximum allowed drawdown (default: 0.05 for 5%)
+            max_drawdown: Maximum allowed drawdown (default: 0.01 for 1%)
+            trailing_stop_pct: Trailing stop percentage (default: 0.015 for 1.5%)
         """
         logger.info("=" * 70)
         logger.info("INITIALIZING GRID SCALPING BOT")
@@ -112,6 +114,7 @@ class GridScalpingBot:
         self.pair = pair
         self.initial_capital = initial_capital
         self.loop_interval = loop_interval
+        self.trailing_stop_pct = trailing_stop_pct
         self.is_running = False
         
         # Bot state
@@ -148,9 +151,10 @@ class GridScalpingBot:
             )
             logger.info(f"   ✓ Drawdown protector initialized (max: {max_drawdown*100:.1f}%)")
             
-            # 4. Initialize trailing stop (will be created per position)
-            logger.info("4. Trailing stop ready")
+            # 4. Initialize trailing stop (will be created when grid becomes active)
+            logger.info(f"4. Trailing stop ready (trail: {trailing_stop_pct*100:.1f}%)")
             self.trailing_stop: Optional[TrailingStop] = None
+            self.position_avg_price: Optional[float] = None  # Track average entry price
             
             # 5. Initialize state manager
             logger.info("5. Initializing state manager...")
@@ -341,6 +345,41 @@ class GridScalpingBot:
                 f"Risk Monitor: Drawdown={status['current_drawdown_pct']:.2f}%, "
                 f"Equity=${status['current_equity']:.2f}"
             )
+            
+            # Trailing stop logic (only when grid is active)
+            if self.grid_active:
+                # Initialize trailing stop if not already created
+                if self.trailing_stop is None:
+                    self.trailing_stop = TrailingStop(side='long')
+                    # Use last grid price as position entry price
+                    self.position_avg_price = self.last_grid_price
+                    logger.info(f"✓ Trailing stop activated at ${self.position_avg_price:.2f}")
+                
+                # Update trailing stop with current price
+                if self.position_avg_price:
+                    self.trailing_stop.update(current_price, self.position_avg_price)
+                    
+                    # Check if trailing stop exit signal triggered
+                    if self.trailing_stop.should_exit(trail_pct=self.trailing_stop_pct):
+                        logger.warning("🛑 TRAILING STOP TRIGGERED - EXITING ALL POSITIONS")
+                        
+                        # Cancel all orders
+                        from connectors.gate_io import cancel_all_orders
+                        cancelled = cancel_all_orders(self.connector, self.pair)
+                        logger.info(f"Cancelled {cancelled} orders")
+                        
+                        # Deactivate grid and reset trailing stop
+                        self.grid_active = False
+                        self.current_orders = []
+                        self.trailing_stop = None
+                        self.position_avg_price = None
+                        
+                        logger.info("Grid deactivated - waiting for new entry conditions")
+            else:
+                # Reset trailing stop when grid is not active
+                if self.trailing_stop is not None:
+                    self.trailing_stop = None
+                    self.position_avg_price = None
             
             # Check for filled orders and log to CSV
             self._check_filled_orders(status['current_equity'])
@@ -839,6 +878,13 @@ Examples:
         help='Maximum allowed drawdown (default: 0.05 for 5%%)'
     )
     
+    parser.add_argument(
+        '--trailing-stop',
+        type=float,
+        default=0.015,
+        help='Trailing stop percentage (default: 0.015 for 1.5%%)'
+    )
+    
     args = parser.parse_args()
     
     # Display startup banner
@@ -850,6 +896,7 @@ Examples:
     print(f"Capital: ${args.capital:.2f}")
     print(f"Loop Interval: {args.interval}s")
     print(f"Max Drawdown: {args.max_drawdown*100:.1f}%")
+    print(f"Trailing Stop: {args.trailing_stop*100:.1f}%")
     print("=" * 70)
     print("")
     
@@ -869,7 +916,8 @@ Examples:
             pair=args.pair,
             initial_capital=args.capital,
             loop_interval=args.interval,
-            max_drawdown=args.max_drawdown
+            max_drawdown=args.max_drawdown,
+            trailing_stop_pct=args.trailing_stop
         )
         
         # Set up signal handlers
