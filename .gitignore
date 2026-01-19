@@ -35,9 +35,9 @@ env/
 .virtualenv/
 
 # Trading bot specific files
-bot_state.json
-trades.csv
-*.log
+# bot_state.json
+# trades.csv
+# *.log
 backups/
 
 # IDE

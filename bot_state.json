@@ -1,0 +1,20 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-01-19T07:01:51.199062",
+  "balances": {
+    "USDT": 5.2155985443,
+    "SOL": 0.325175
+  },
+  "active_orders": [],
+  "grid_parameters": {
+    "pair": "SOL_USDT",
+    "grid_active": false,
+    "last_update": 1768775471.440532
+  },
+  "last_equity": 48.541915544300004,
+  "metadata": {
+    "mode": "mainnet",
+    "iteration": 3505,
+    "timestamp": "2026-01-19T07:01:51.199036"
+  }
+}
